@@ -33,6 +33,12 @@ func (c *UserController) Register(ctx *gin.Context) {
 		Role:     "user",
 	}
 
+	// Call BeforeCreate Service
+	if err := c.userService.BeforeCreate(user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	createdUser, err := c.userService.Register(user)
 	if err != nil {
 		if errMsg, ok := err.(*services.ErrorMessage); ok {
@@ -44,11 +50,11 @@ func (c *UserController) Register(ctx *gin.Context) {
 	}
 
 	registerResponse := &dto.RegisterResponse{
-		ID:       createdUser.ID,
-		Name:     createdUser.Name,
-		Email:    createdUser.Email,
-		Phone:    createdUser.Phone,
-		Role:     createdUser.Role,
+		ID:    createdUser.ID,
+		Name:  createdUser.Name,
+		Email: createdUser.Email,
+		Phone: createdUser.Phone,
+		Role:  createdUser.Role,
 	}
 
 	response := gin.H{

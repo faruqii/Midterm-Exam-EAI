@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +28,11 @@ func (r *userRepository) Insert(user *domain.User) (*domain.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (r *userRepository) BeforeCreate(scope *gorm.DB) error {
+	scope.Statement.SetColumn("ID", uuid.NewString())
+	return nil
 }
 
 func (r *userRepository) Update(user *domain.User) (*domain.User, error) {

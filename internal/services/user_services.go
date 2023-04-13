@@ -6,11 +6,13 @@ import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/repositories"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
 	Register(user *domain.User) (*domain.User, error)
+	BeforeCreate(user *domain.User) error
 }
 
 type userService struct {
@@ -76,4 +78,9 @@ func (s *userService) Register(user *domain.User) (*domain.User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *userService) BeforeCreate(user *domain.User) error {
+	user.ID = uuid.NewString()
+	return nil
 }
