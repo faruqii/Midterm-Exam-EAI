@@ -6,15 +6,11 @@ import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/repositories"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
-	Insert(user *domain.User) (*domain.User, error)
-	Update(user *domain.User) (*domain.User, error)
-	FindByEmail(email string) (*domain.User, error)
-	FindUserByToken(token string) (*domain.User, error)
 	Register(user *domain.User) (*domain.User, error)
-	Login(user *domain.User) (*domain.User, error)
 }
 
 type userService struct {
@@ -47,8 +43,37 @@ func (s *userService) Register(user *domain.User) (*domain.User, error) {
 		}
 	}
 
-	// TODO: Later hehe
+	// Validate the role of the user
+	_, err = repo.FindRoleByName(user.Role)
 
-	return nil, nil
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Invalid role",
+			Code:    http.StatusBadRequest,
+		}
+	}
 
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to hash password",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	user.Password = string(hashedPassword)
+
+	// Insert the user to database
+	user, err = repo.Insert(user)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to register",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return user, nil
 }

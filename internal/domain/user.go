@@ -14,8 +14,7 @@ type User struct {
 	Role     string `json:"role"`
 }
 
-// BeforeCreate generates a UUID for primary key before creating a new user
-func (user *User) BeforeCreate(_ *gorm.DB) (err error) {
-	user.ID = uuid.New().String()
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	u.ID = uuid.NewString()
 	return
 }
