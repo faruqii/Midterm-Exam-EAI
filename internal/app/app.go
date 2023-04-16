@@ -5,13 +5,13 @@ import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/repositories"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/routes"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/services"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
 func StartApplication() {
 
 	// initialize gin
-	app := gin.Default()
+	app := fiber.New()
 
 	// initialize db
 	db, err := config.Connect()
@@ -31,6 +31,9 @@ func StartApplication() {
 	routes.SetUpUserRoutes(userRouter, userService)
 
 	// start the server
+	err = app.Listen(":3000")
 
-	app.Run(":3000")
+	if err != nil {
+		panic(err)
+	}
 }

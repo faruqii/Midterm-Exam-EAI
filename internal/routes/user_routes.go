@@ -3,10 +3,11 @@ package routes
 import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/controllers"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/services"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
-func SetUpUserRoutes(router *gin.RouterGroup, userService services.UserService) {
+func SetUpUserRoutes(router fiber.Router, userService services.UserService) {
 	userController := controllers.NewUserController(userService)
-	router.POST("/register", userController.Register)
+	router.Post("/register", userController.Register)
+	router.Post("/login", userController.Login)
 }

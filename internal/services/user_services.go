@@ -6,13 +6,13 @@ import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/repositories"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
 	Register(user *domain.User) (*domain.User, error)
-	BeforeCreate(user *domain.User) error
+	Login(email, password string) (*domain.User, error)
+	FindRoleByName(name string) (*domain.Role, error)
 }
 
 type userService struct {
@@ -80,7 +80,59 @@ func (s *userService) Register(user *domain.User) (*domain.User, error) {
 	return user, nil
 }
 
-func (s *userService) BeforeCreate(user *domain.User) error {
-	user.ID = uuid.NewString()
-	return nil
+func (s *userService) Login(email, password string) (*domain.User, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	user, err := repo.FindByEmail(email)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Wrong password",
+			Code:    http.StatusUnauthorized,
+		}
+	}
+
+	return user, nil
+}
+
+func (s *userService) FindRoleByName(name string) (*domain.Role, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	role, err := repo.FindRoleByName(name)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Role not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	return role, nil
 }

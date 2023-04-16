@@ -2,11 +2,14 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/dto"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/services"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type UserController struct {
@@ -17,51 +20,140 @@ func NewUserController(userService services.UserService) *UserController {
 	return &UserController{userService: userService}
 }
 
-func (c *UserController) Register(ctx *gin.Context) {
+func (c *UserController) Register(ctx *fiber.Ctx) error {
 	var registerRequest dto.RegisterRequest
-	err := ctx.ShouldBindJSON(&registerRequest)
+
+	if err := ctx.BodyParser(&registerRequest); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	role, err := c.userService.FindRoleByName("user")
+
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
 	user := &domain.User{
 		Name:     registerRequest.Name,
 		Email:    registerRequest.Email,
-		Phone:    registerRequest.Phone,
 		Password: registerRequest.Password,
-		Role:     "user",
+		Phone:    registerRequest.Phone,
+		Role:     role.Name,
 	}
 
-	// Call BeforeCreate Service
-	if err := c.userService.BeforeCreate(user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// save user to database
+	user, err = c.userService.Register(user)
 
-	createdUser, err := c.userService.Register(user)
 	if err != nil {
-		if errMsg, ok := err.(*services.ErrorMessage); ok {
-			ctx.JSON(errMsg.Code, gin.H{"error": errMsg.Message})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register"})
-		return
+		return ctx.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
-	registerResponse := &dto.RegisterResponse{
-		ID:    createdUser.ID,
-		Name:  createdUser.Name,
-		Email: createdUser.Email,
-		Phone: createdUser.Phone,
-		Role:  createdUser.Role,
+	// return response
+	response := dto.RegisterResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+		Role:  user.Role,
 	}
 
-	response := gin.H{
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{
 		"status":  "success",
 		"message": "User registered successfully",
-		"data":    registerResponse,
+		"data":    response,
+	})
+
+}
+
+func (c *UserController) Login(ctx *fiber.Ctx) error {
+	req := dto.LoginRequest{}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	user, err := c.userService.Login(req.Email, req.Password)
+
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	token, err := CreateUserToken(user)
+
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// set cookie
+	cookie := fiber.Cookie{
+		Name:     "token",
+		Value:    token,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	}
+
+	ctx.Cookie(&cookie)
+
+	// return response
+	response := dto.LoginResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+		Role:  user.Role,
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "User logged in successfully",
+		"data":    response,
+		"token":   token,
+	})
+
+}
+
+func CreateUserToken(user *domain.User) (string, error) {
+	claims := dto.Claims{
+		UserID: user.ID,
+		Email:  user.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    user.Name,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, _ := token.SignedString([]byte("secret"))
+
+	userToken := domain.Token{
+		UserID: user.ID,
+		Token:  signedToken,
+		Type:   user.Role,
+	}
+
+	var existingUserToken domain.Token
+
+	err := config.DB.Where("user_id = ?", user.ID).First(&existingUserToken).Error
+
+	if err != nil {
+		err = config.DB.Create(&userToken).Error
+	} else {
+		err = config.DB.Model(&existingUserToken).Updates(&userToken).Error
+	}
+
+	return signedToken, err
 }
