@@ -20,7 +20,7 @@ func UserAuthentication(c AuthConfig) fiber.Handler {
 		}
 
 		// check user token is valid
-		var userToken domain.Token
+		userToken := domain.Token{}
 
 		err := config.DB.Where("token = ?", header["Authorization"]).First(&userToken).Error
 
@@ -32,7 +32,7 @@ func UserAuthentication(c AuthConfig) fiber.Handler {
 			return c.Unauthorized(ctx)
 		}
 
-		ctx.Locals("user", userToken.Token)
+		ctx.Locals("user", userToken)
 
 		return ctx.Next()
 	}

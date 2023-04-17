@@ -35,3 +35,12 @@ type Claims struct {
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
+
+type TopupRequest struct {
+	Balance float64 `json:"balance"`
+}
+
+type TopupResponse struct {
+	UserName string  `json:"user_name"`
+	Balance  float64 `json:"balance"`
+}

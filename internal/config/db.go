@@ -43,6 +43,7 @@ func Connect() (*gorm.DB, error) {
 		&domain.User{},
 		&domain.Role{},
 		&domain.Token{},
+		&domain.UserBalance{},
 	)
 
 	if err != nil {

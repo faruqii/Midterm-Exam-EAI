@@ -13,6 +13,10 @@ type UserService interface {
 	Register(user *domain.User) (*domain.User, error)
 	Login(email, password string) (*domain.User, error)
 	FindRoleByName(name string) (*domain.Role, error)
+	FindUserByToken(token string) (*domain.User, error)
+	GetUserBalance(UserID string) (*domain.UserBalance, error)
+	AddBalance(userBalance *domain.UserBalance) (*domain.UserBalance, error)
+	UpdateBalance(userBalance *domain.UserBalance) (*domain.UserBalance, error)
 }
 
 type userService struct {
@@ -135,4 +139,126 @@ func (s *userService) FindRoleByName(name string) (*domain.Role, error) {
 	}
 
 	return role, nil
+}
+
+func (s *userService) FindUserByToken(token string) (*domain.User, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	userID, err := repo.FindUserByToken(token)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Token not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	user, err := repo.FindByID(userID)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	return user, nil
+}
+
+func (s *userService) GetUserBalance(UserID string) (*domain.UserBalance, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	userBalance, err := repo.GetUserBalance(UserID)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	return userBalance, nil
+}
+
+func (s *userService) AddBalance(userBalance *domain.UserBalance) (*domain.UserBalance, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	existingUserBalance, err := repo.GetUserBalance(userBalance.UserID)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
+		}
+	}
+
+	if existingUserBalance == nil {
+		// if user balance not exist, create new user balance
+		newUserBalance, err := repo.CreateUserBalance(userBalance)
+
+		if err != nil {
+			return nil, &ErrorMessage{
+				Message: "Failed to create user balance",
+				Code:    http.StatusInternalServerError,
+			}
+		}
+
+		return newUserBalance, nil
+	} else {
+		return nil, &ErrorMessage{
+			Message: "User balance already exist",
+			Code:    http.StatusBadRequest,
+		}
+	}
+}
+
+func (s *userService) UpdateBalance(userBalance *domain.UserBalance) (*domain.UserBalance, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	updatedUserBalance, err := repo.UpdateUserBalance(userBalance)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to update user balance",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return updatedUserBalance, nil
 }

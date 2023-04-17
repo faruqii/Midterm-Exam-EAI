@@ -7,18 +7,9 @@ import (
 	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/dto"
-	"github.com/faruqii/Midterm-Exam-EAI/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 )
-
-type UserController struct {
-	userService services.UserService
-}
-
-func NewUserController(userService services.UserService) *UserController {
-	return &UserController{userService: userService}
-}
 
 func (c *UserController) Register(ctx *fiber.Ctx) error {
 	var registerRequest dto.RegisterRequest

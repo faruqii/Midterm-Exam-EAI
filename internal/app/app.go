@@ -27,8 +27,7 @@ func StartApplication() {
 
 	// initialize routes
 	apiEndpoint := app.Group("/api")
-	userRouter := apiEndpoint.Group("/user")
-	routes.SetUpUserRoutes(userRouter, userService)
+	routes.SetUpUserRoutes(apiEndpoint, userService)
 
 	// start the server
 	err = app.Listen(":3000")
