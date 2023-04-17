@@ -75,3 +75,38 @@ func (c *UserController) TopUp(ctx *fiber.Ctx) (err error) {
 		"data":    response,
 	})
 }
+
+func (c *UserController) GetBalance(ctx *fiber.Ctx) (err error) {
+	// get token from context | This is middleware
+	userToken := ctx.Locals("user").(domain.Token)
+
+	// get user id
+	user, err := c.userService.FindUserByToken(userToken.Token)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// get user balance
+	userBalance, err := c.userService.GetUserBalance(user.ID)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// return response
+	response := dto.GetBalanceResponse{
+		UserName: user.Name,
+		Balance:  userBalance.Balance,
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Get balance successfully",
+		"data":    response,
+	})
+}

@@ -44,3 +44,8 @@ type TopupResponse struct {
 	UserName string  `json:"user_name"`
 	Balance  float64 `json:"balance"`
 }
+
+type GetBalanceResponse struct {
+	UserName string  `json:"user_name"`
+	Balance  float64 `json:"balance"`
+}
