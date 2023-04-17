@@ -30,6 +30,14 @@ type LoginResponse struct {
 	Role  string `json:"role"`
 }
 
+type ProfileResponse struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	Role  string `json:"role"`
+}
+
 type Claims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`

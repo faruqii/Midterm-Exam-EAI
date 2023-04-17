@@ -12,6 +12,7 @@ import (
 type UserService interface {
 	Register(user *domain.User) (*domain.User, error)
 	Login(email, password string) (*domain.User, error)
+	GetUserProfile(userID string) (*domain.User, error)
 	FindRoleByName(name string) (*domain.Role, error)
 	FindUserByToken(token string) (*domain.User, error)
 	GetUserBalance(UserID string) (*domain.UserBalance, error)
@@ -111,6 +112,30 @@ func (s *userService) Login(email, password string) (*domain.User, error) {
 		return nil, &ErrorMessage{
 			Message: "Wrong password",
 			Code:    http.StatusUnauthorized,
+		}
+	}
+
+	return user, nil
+}
+
+func (s *userService) GetUserProfile(userID string) (*domain.User, error) {
+	conn, err := config.Connect()
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "Failed to connect to database",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	repo := repositories.NewUserRepository(conn)
+
+	user, err := repo.FindByID(userID)
+
+	if err != nil {
+		return nil, &ErrorMessage{
+			Message: "User not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 

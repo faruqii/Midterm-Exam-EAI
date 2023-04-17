@@ -19,7 +19,11 @@ func SetUpUserRoutes(router fiber.Router, userService services.UserService) {
 			})
 		},
 	}))
-	user.Post("/topup", userController.TopUp)
-	user.Get("/balance", userController.GetBalance)
+
+	user.Get("/profile", userController.GetUserProfile)
+
+	balance := user.Group("/balance")
+	balance.Post("/topup", userController.TopUp)
+	user.Get("", userController.GetBalance)
 
 }

@@ -62,7 +62,7 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 
 }
 
-func (c *UserController) Login(ctx *fiber.Ctx) error {
+func (c *UserController) Login(ctx *fiber.Ctx) (err error) {
 	req := dto.LoginRequest{}
 
 	if err := ctx.BodyParser(&req); err != nil {
@@ -147,4 +147,31 @@ func CreateUserToken(user *domain.User) (string, error) {
 	}
 
 	return signedToken, err
+}
+
+func (c *UserController) GetUserProfile(ctx *fiber.Ctx) (err error) {
+	user := ctx.Locals("user").(domain.Token)
+
+	userProfile, err := c.userService.GetUserProfile(user.UserID)
+
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// return response
+	response := dto.ProfileResponse{
+		ID:    userProfile.ID,
+		Name:  userProfile.Name,
+		Email: userProfile.Email,
+		Phone: userProfile.Phone,
+		Role:  userProfile.Role,
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "User profile fetched successfully",
+		"data":    response,
+	})
 }
