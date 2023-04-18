@@ -117,9 +117,23 @@ func (p *ProductController) GetAllProducts(ctx *fiber.Ctx) (err error) {
 		})
 	}
 
+	// loop all products then add to response
+	response := []dto.ProductResponse{}
+
+	for _, product := range products {
+		response = append(response, dto.ProductResponse{
+			ID:           product.ID,
+			Name:         product.Name,
+			Description:  product.Description,
+			Price:        product.Price,
+			Stock:        product.Stock,
+			CategoryName: product.Category.Name,
+		})
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "success get all products",
-		"data":    products,
+		"data":    response,
 	})
 }
 
@@ -139,11 +153,6 @@ func (p *ProductController) DeleteProduct(ctx *fiber.Ctx) (err error) {
 	})
 }
 
-// Find Product
-// using query string to find product
-// example: /products?name=product1
-// also can use multiple query string
-// example: /products?name=product1&category_name=category1
 func (p *ProductController) FindProduct(ctx *fiber.Ctx) (err error) {
 	name := ctx.Query("name")
 	categoryName := ctx.Query("category_name")

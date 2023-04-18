@@ -53,7 +53,7 @@ func (r *productsRepository) Delete(id string) error {
 
 func (r *productsRepository) FindAll() ([]domain.Product, error) {
 	var products []domain.Product
-	err := r.db.Find(&products).Error
+	err := r.db.Preload("Category").Find(&products).Error
 	if err != nil {
 		return nil, err
 	}
