@@ -24,6 +24,6 @@ func SetUpUserRoutes(router fiber.Router, userService services.UserService) {
 
 	balance := user.Group("/balance")
 	balance.Post("/topup", userController.TopUp)
-	user.Get("", userController.GetBalance)
+	balance.Get("", userController.GetBalance)
 
 }

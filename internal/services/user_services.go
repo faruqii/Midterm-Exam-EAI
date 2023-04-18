@@ -235,33 +235,18 @@ func (s *userService) AddBalance(userBalance *domain.UserBalance) (*domain.UserB
 
 	repo := repositories.NewUserRepository(conn)
 
-	existingUserBalance, err := repo.GetUserBalance(userBalance.UserID)
+	// create new user balance
+	newUserBalance, err := repo.CreateUserBalance(userBalance)
 
 	if err != nil {
 		return nil, &ErrorMessage{
-			Message: "User not found",
-			Code:    http.StatusNotFound,
+			Message: "Failed to add balance",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	if existingUserBalance == nil {
-		// if user balance not exist, create new user balance
-		newUserBalance, err := repo.CreateUserBalance(userBalance)
+	return newUserBalance, nil
 
-		if err != nil {
-			return nil, &ErrorMessage{
-				Message: "Failed to create user balance",
-				Code:    http.StatusInternalServerError,
-			}
-		}
-
-		return newUserBalance, nil
-	} else {
-		return nil, &ErrorMessage{
-			Message: "User balance already exist",
-			Code:    http.StatusBadRequest,
-		}
-	}
 }
 
 func (s *userService) UpdateBalance(userBalance *domain.UserBalance) (*domain.UserBalance, error) {
