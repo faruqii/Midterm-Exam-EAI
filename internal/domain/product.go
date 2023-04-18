@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -22,7 +24,9 @@ type Product struct {
 	Price       float64 `json:"price"`
 	Stock       int     `json:"stock"`
 	CategoryID  string  `json:"category_id"`
-	Category    Categories
+	Category    Categories `json:"category" gorm:"foreignKey:CategoryID;references:ID"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (p *Product) BeforeCreate(tx *gorm.DB) (err error) {

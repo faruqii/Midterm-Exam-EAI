@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"strings"
+
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"gorm.io/gorm"
 )
@@ -71,17 +73,27 @@ func (r *productsRepository) FindByID(id string) (*domain.Product, error) {
 
 func (r *productsRepository) FindByCategoryName(name string) ([]domain.Product, error) {
 	var products []domain.Product
-	err := r.db.Joins("Category").Where("categories.name = ?", name).Find(&products).Error
+	name = strings.ToLower(name)
+
+	err := r.db.
+		Preload("Category").
+		Joins("JOIN categories ON categories.id = products.category_id").
+		Where("LOWER(categories.name) LIKE ?", "%"+name+"%").
+		Find(&products).Error
+
 	if err != nil {
 		return nil, err
 	}
+
 	return products, nil
 }
 
 func (r *productsRepository) FindProductByName(name string) ([]domain.Product, error) {
 	var products []domain.Product
 
-	err := r.db.Preload("Category").Where("name LIKE ?", "%"+name+"%").Find(&products).Error
+	name = strings.ToLower(name)
+
+	err := r.db.Preload("Category").Where("LOWER(name) LIKE ?", "%"+name+"%").Find(&products).Error
 	if err != nil {
 		return nil, err
 	}

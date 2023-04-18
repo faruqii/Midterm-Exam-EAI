@@ -24,6 +24,12 @@ func SetUpProductRoutes(router fiber.Router, productServices services.ProductSer
 	}))
 
 	products.Post("", productController.AddProduct)
-	products.Get("", productController.GetAllProducts)
+	products.Put("/:id", productController.UpdateProduct)
+	products.Delete("/:id", productController.DeleteProduct)
+
+	// Global Search
+	serach := router.Group("/search")
+	serach.Get("/products", productController.GetAllProducts)
+	serach.Get("/product", productController.FindProduct)
 
 }

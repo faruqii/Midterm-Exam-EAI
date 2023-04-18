@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"time"
+
 	"github.com/faruqii/Midterm-Exam-EAI/internal/domain"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/dto"
 	"github.com/gofiber/fiber/v2"
@@ -36,6 +38,8 @@ func (p *ProductController) AddProduct(ctx *fiber.Ctx) (err error) {
 		Price:       req.Price,
 		Stock:       req.Stock,
 		CategoryID:  req.CategoryID,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	product, err = p.productService.AddProduct(product)
@@ -61,6 +65,8 @@ func (p *ProductController) AddProduct(ctx *fiber.Ctx) (err error) {
 		Price:        product.Price,
 		Stock:        product.Stock,
 		CategoryName: product.Category.Name,
+		CreatedAt:    product.CreatedAt,
+		UpdatedAt:    product.UpdatedAt,
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -72,7 +78,7 @@ func (p *ProductController) AddProduct(ctx *fiber.Ctx) (err error) {
 func (p *ProductController) UpdateProduct(ctx *fiber.Ctx) (err error) {
 	id := ctx.Params("id")
 
-	req := dto.ProductRequest{}
+	req := dto.ProductUpdateRequest{}
 
 	if err = ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -93,6 +99,7 @@ func (p *ProductController) UpdateProduct(ctx *fiber.Ctx) (err error) {
 	product.Price = req.Price
 	product.Stock = req.Stock
 	product.CategoryID = req.CategoryID
+	product.UpdatedAt = time.Now()
 
 	product, err = p.productService.UpdateProduct(product)
 
@@ -102,9 +109,20 @@ func (p *ProductController) UpdateProduct(ctx *fiber.Ctx) (err error) {
 		})
 	}
 
+	response := dto.ProductResponse{
+		ID:           product.ID,
+		Name:         product.Name,
+		Description:  product.Description,
+		Price:        product.Price,
+		Stock:        product.Stock,
+		CategoryName: product.Category.Name,
+		CreatedAt:    product.CreatedAt,
+		UpdatedAt:    product.UpdatedAt,
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "success update product",
-		"data":    product,
+		"data":    response,
 	})
 }
 
@@ -153,34 +171,23 @@ func (p *ProductController) DeleteProduct(ctx *fiber.Ctx) (err error) {
 	})
 }
 
+// FindProduct find product by name or category name
+// using query string like this: product?name=tangkelek or product?category_name=food or both of them like this: product?name=tangkelek&category_name=food
 func (p *ProductController) FindProduct(ctx *fiber.Ctx) (err error) {
 	name := ctx.Query("name")
 	categoryName := ctx.Query("category_name")
 
-	var products []domain.Product
-
-	if name != "" {
-		products, err = p.productService.FindProductByName(name)
-	} else if categoryName != "" {
-		products, err = p.productService.FinProductByCategoryName(categoryName)
-	} else {
+	// if both of query string is empty
+	if name == "" && categoryName == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "query string not found",
+			"error": "query string name or category_name is required",
 		})
 	}
 
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	// loop all products
-	// and get category name
 	response := []dto.ProductResponse{}
 
-	for _, product := range products {
-		category, err := p.productService.GetCategoryByID(product.CategoryID)
+	if name != "" {
+		products, err := p.productService.FindProductByName(name)
 
 		if err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -188,19 +195,46 @@ func (p *ProductController) FindProduct(ctx *fiber.Ctx) (err error) {
 			})
 		}
 
-		response = append(response, dto.ProductResponse{
-			Name:         product.Name,
-			Description:  product.Description,
-			Price:        product.Price,
-			Stock:        product.Stock,
-			CategoryName: category.Name,
-		})
+		// loop all products then add to response
+
+		for _, product := range products {
+			response = append(response, dto.ProductResponse{
+				ID:           product.ID,
+				Name:         product.Name,
+				Description:  product.Description,
+				Price:        product.Price,
+				Stock:        product.Stock,
+				CategoryName: product.Category.Name,
+			})
+		}
+	}
+
+	if categoryName != "" {
+		products, err := p.productService.FinProductByCategoryName(categoryName)
+
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		// loop all products then add to response
+
+		for _, product := range products {
+			response = append(response, dto.ProductResponse{
+				ID:           product.ID,
+				Name:         product.Name,
+				Description:  product.Description,
+				Price:        product.Price,
+				Stock:        product.Stock,
+				CategoryName: product.Category.Name,
+			})
+		}
+
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "success find product",
-		"status":  "success",
 		"data":    response,
 	})
-
 }

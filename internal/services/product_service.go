@@ -44,14 +44,12 @@ func (s *productService) AddProduct(product *domain.Product) (*domain.Product, e
 	// check category exist or not by category id
 	_, err = repo.GetCategoriesByID(product.Category.ID)
 
-
 	if err == nil {
 		return nil, &ErrorMessage{
 			Message: "Product already exist",
 			Code:    http.StatusBadRequest,
 		}
 	}
-
 
 	return repo.Insert(product)
 
@@ -69,22 +67,12 @@ func (s *productService) UpdateProduct(product *domain.Product) (*domain.Product
 
 	repo := repositories.NewProductsRepository(conn)
 
-	// check if product already exist
-	_, err = repo.FindProductByName(product.Name)
+	// check category exist or not by category id
+	_, err = repo.GetCategoriesByID(product.Category.ID)
 
 	if err != nil {
 		return nil, &ErrorMessage{
 			Message: "Product not found",
-			Code:    http.StatusBadRequest,
-		}
-	}
-
-	// Validate the category of the product
-	_, err = repo.FindByCategoryName(product.Category.Name)
-
-	if err != nil {
-		return nil, &ErrorMessage{
-			Message: "Invalid category",
 			Code:    http.StatusBadRequest,
 		}
 	}
@@ -226,3 +214,5 @@ func (s *productService) GetCategoryByID(id string) (*domain.Categories, error) 
 
 	return repo.GetCategoriesByID(id)
 }
+
+

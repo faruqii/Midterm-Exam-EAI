@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+
 	"github.com/faruqii/Midterm-Exam-EAI/internal/config"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/repositories"
 	"github.com/faruqii/Midterm-Exam-EAI/internal/routes"
@@ -39,7 +41,7 @@ func StartApplication() {
 	routes.SetUpProductRoutes(apiEndpoint, productService)
 
 	// start the server
-	err = app.Listen(":3000")
+	err = app.Listen(":" + os.Getenv("PORT"))
 
 	if err != nil {
 		panic(err)

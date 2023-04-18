@@ -5,13 +5,66 @@ services:
   db:
     image: postgres
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: postgres
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - app
+    volumes:
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+    networks:
+      - app
+
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: faruqihafiz/uts-eai:v1
+    environment:
+      DB_HOST: midterm-exam-eai-db-1 
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_PORT: 5432
+      DB_SSLMODE: disable
+      WAIT_HOSTS: midterm-exam-eai-db-1:5432
+      WAIT_HOSTS_TIMEOUT: 30
+      WAIT_SLEEP_INTERVAL: 10
+      WAIT_HOST_CONNECT_TIMEOUT: 30
+    # app has dependencies on db and adminer
+    # app will not start until db and adminer are up
+    depends_on:
+      - db
+      - adminer
+    links:
+      - db
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/go/src/app
+    networks:
+      - app    
+    command: sh -c "/wait && /server"
+
+networks:
+  app:
+    driver: bridge
+  
+volumes:
+  app:
