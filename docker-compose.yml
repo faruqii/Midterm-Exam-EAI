@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: faruqihafiz/uts-eai:v1
+    image: faruqihafiz/uts-eai:v2
     environment:
       DB_HOST: midterm-exam-eai-db-1 
       DB_USER: postgres
